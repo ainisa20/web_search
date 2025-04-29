@@ -1,0 +1,83 @@
+name: firecrawl
+
+x-common-service: &common-service
+  # NOTE: If you want to build the service locally,
+  # uncomment the build: statement and comment out the image: statement
+  # build: apps/api
+  ulimits:
+    nofile:
+      soft: 65535
+      hard: 65535
+  networks:
+    - backend
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+
+x-common-env: &common-env
+  REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+  REDIS_RATE_LIMIT_URL: ${REDIS_URL:-redis://redis:6379}
+  PLAYWRIGHT_MICROSERVICE_URL: ${PLAYWRIGHT_MICROSERVICE_URL:-http://playwright-service:3000/scrape}
+  USE_DB_AUTHENTICATION: ${USE_DB_AUTHENTICATION}
+  OPENAI_API_KEY: ${OPENAI_API_KEY}
+  OPENAI_BASE_URL: ${OPENAI_BASE_URL}
+  MODEL_NAME: ${MODEL_NAME}
+  MODEL_EMBEDDING_NAME: ${MODEL_EMBEDDING_NAME}
+  OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
+  SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
+  BULL_AUTH_KEY: ${BULL_AUTH_KEY}
+  TEST_API_KEY: ${TEST_API_KEY}
+  POSTHOG_API_KEY: ${POSTHOG_API_KEY}
+  POSTHOG_HOST: ${POSTHOG_HOST}
+  SUPABASE_ANON_TOKEN: ${SUPABASE_ANON_TOKEN}
+  SUPABASE_URL: ${SUPABASE_URL}
+  SUPABASE_SERVICE_TOKEN: ${SUPABASE_SERVICE_TOKEN}
+  SCRAPING_BEE_API_KEY: ${SCRAPING_BEE_API_KEY}
+  SELF_HOSTED_WEBHOOK_URL: ${SELF_HOSTED_WEBHOOK_URL}
+  SERPER_API_KEY: ${SERPER_API_KEY}
+  SEARCHAPI_API_KEY: ${SEARCHAPI_API_KEY}
+  LOGGING_LEVEL: ${LOGGING_LEVEL}
+  PROXY_SERVER: ${PROXY_SERVER}
+  PROXY_USERNAME: ${PROXY_USERNAME}
+  PROXY_PASSWORD: ${PROXY_PASSWORD}
+  SEARXNG_ENDPOINT: ${SEARXNG_ENDPOINT}
+  SEARXNG_ENGINES: ${SEARXNG_ENGINES}
+  SEARXNG_CATEGORIES: ${SEARXNG_CATEGORIES}
+
+version: '3.8'
+
+services:
+  api:
+    <<: *common-service
+    image: vinsonwang/firecrawl-api:latest
+    environment:
+      <<: *common-env
+      PORT: 3002
+    ports:
+      - "3002:3002"
+    depends_on:
+      - redis
+      - playwright-service
+
+  worker:
+    <<: *common-service
+    image: vinsonwang/firecrawl-worker:latest
+    environment:
+      <<: *common-env
+    depends_on:
+      - redis
+      - playwright-service
+
+  playwright-service:
+    <<: *common-service
+    image: vinsonwang/firecrawl-playwright-service:latest
+
+  redis:
+    image: vinsonwang/firecrawl-redis:alpine
+    ports:
+      - "6385:6379"
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
