@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  web:
+    image: vinsonwang/webapi:latest
+    container_name: myquartapp_prod
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+    ports:
+      - "5045:5045"
+    environment:
+      - UVICORN_WORKERS=4
+      - UVICORN_TIMEOUT_KEEP_ALIVE=60
+      - READER_SERVICE_URL=http://host.docker.internal:3010  # 假设reader服务在本地
+      - SEARX_HOST=http://host.docker.internal:8081  # 假设searxng服务在本地
+      - FIRE_CRAWL_BASE=http://host.docker.internal:3002/v1  # 假设firecrawl服务在本地
+      - SEARCH_TYPE=mutil  # 可选searxng / sougo / mutil
