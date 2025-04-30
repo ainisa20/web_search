@@ -1,1 +1,11 @@
+version: '1.0'
 
+services:
+  reader:
+    image: vinsonwang/reader:latest
+    container_name: reader-container
+    ports:
+      - "3010:3000"
+    volumes:
+      - /Users/vinson/Documents/www/local-storage/reader:/app/local-storage
+    restart: unless-stopped  # 建议添加的优化项
